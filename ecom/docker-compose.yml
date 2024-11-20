@@ -1,0 +1,49 @@
+services:
+  api:
+    build:
+      context: ./.
+      dockerfile: Dockerfile
+    image: ecommerce_app:latest
+    container_name: ecommerce_container
+    ports:
+      - "8000:8000"
+    expose:
+      - 8000
+    networks:
+      - postgis_network
+    restart: on-failure # Will restart on failure, but not indefinitely
+    env_file:
+      - .env
+
+
+  postgis:
+    image: postgis/postgis:latest
+    container_name: postgis_container
+    environment:
+      - POSTGRES_PASSWORD=P@ssw0rd
+      - POSTGRES_USERS=riwaj_postgis
+      - POSTGRES_DB=ecom_database
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgis_data:/var/lib/postgresql/data/
+    networks:
+      - postgis_network
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin4_container
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@test.com
+      - PGADMIN_DEFAULT_PASSWORD=adminP@ssw0rd
+    ports:
+      - "8080:80"
+    networks:
+      - postgis_network
+
+volumes:
+  postgis_data:
+
+networks:
+  postgis_network:
+    driver: bridge
