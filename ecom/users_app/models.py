@@ -8,21 +8,6 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 
 # Create your models here.
-class BaseModel(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete = models.DO_NOTHING,
-        related_name= "%(class)s_created_by",
-        null=True,
-        blank=True
-    )
-
-    class Meta:
-        abstract = True
-
-
 class AppUserManager(BaseUserManager):
     
     def create_user(self, email, password=None, **extra_fields):
@@ -39,22 +24,7 @@ class AppUserManager(BaseUserManager):
         return user
     
 
-    def create_superuser(self, email, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        extra_fields.setdefault('is_active', True)
-
-        if extra_fields.get('is_staff') is not True:
-            raise ValueError("Superuser must have is_staff=True.")
-        if extra_fields.get('is_superuser') is not True:
-            raise ValueError("Superuser must have is_superuser=True.")
-        if extra_fields.get('is_active') is not True:
-            raise ValueError("Superuser must have is_active=True.")
-
-        return self.create_user(email, password, **extra_fields)
-
-
-class AppUser(BaseModel, AbstractBaseUser, PermissionsMixin):
+class AppUser(AbstractBaseUser, PermissionsMixin):
     username = None
     email = models.EmailField(unique=True)
     otp = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(100000), MaxValueValidator(999999)])
@@ -82,6 +52,37 @@ class AppUser(BaseModel, AbstractBaseUser, PermissionsMixin):
     def has_module_perms(self, app_label):
         """Check if the user has permissions to access the specified app."""
         return True
+    
+
+class BaseModel(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(
+        AppUser,
+        on_delete = models.DO_NOTHING,
+        related_name= "%(class)s_created_by",
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        abstract = True
+
+    
+
+    def create_superuser(self, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError("Superuser must have is_staff=True.")
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError("Superuser must have is_superuser=True.")
+        if extra_fields.get('is_active') is not True:
+            raise ValueError("Superuser must have is_active=True.")
+
+        return self.create_user(email, password, **extra_fields)
 
 
 def profile_pic_upload_to(instance, filename):

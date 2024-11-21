@@ -1,20 +1,21 @@
-from django.urls import reverse
 from django.utils.html import format_html
 from django.contrib import admin
 from users_app import models
 from django.contrib.admin import ModelAdmin
 
+@admin.register(models.AppUser)
 class UserAdmin(ModelAdmin):
-    list_display = ('email', 'is_staff', 'is_active', 'is_superuser', 'created_at')
+    list_display = ('email', 'is_staff', 'is_active', 'is_superuser')
     list_filter = ('is_staff', 'is_active', 'is_superuser')
     fields = ('email', 'is_staff', 'is_active', 'is_superuser', 'last_login', 'groups', 'user_permissions')
     search_fields = ['email']
     readonly_fields = ['last_login']
 
-admin.site.register(models.AppUser, UserAdmin)
 
+@admin.register(models.Profile)
 class ProfileAdmin(ModelAdmin):
-    list_display = ('user_link','display_profile_picture',  'first_name_link', 'last_name_link', 'phone_link')
+    list_display = ('user','display_profile_picture', 'first_name', 'last_name', 'phone', 'created_at')
+    list_display_links = ('user', 'first_name', 'last_name', 'phone')
     search_fields = ['first_name', 'last_name', 'email']
     readonly_fields = ('email', 'first_name', 'last_name', 'phone', 'date_of_birth', 'profile_picture', 'user', 'academic_background', 'bio', 'address_line1', 'created_at', 'updated_at', 'created_by')
 
@@ -25,30 +26,3 @@ class ProfileAdmin(ModelAdmin):
         return "No image"
     
     display_profile_picture.short_description = 'Profile Picture'
-
-    def user_link(self, obj):
-        """Make the user column clickable and link to the edit page."""
-        url = reverse('admin:%s_%s_change' % (obj._meta.app_label, obj._meta.model_name), args=[obj.pk])
-        return format_html('<a href="{}">{}</a>', url, obj.user)
-
-    def first_name_link(self, obj):
-        """Make the user column clickable and link to the edit page."""
-        url = reverse('admin:%s_%s_change' % (obj._meta.app_label, obj._meta.model_name), args=[obj.pk])
-        return format_html('<a href="{}">{}</a>', url, obj.first_name)
-    
-    def last_name_link(self, obj):
-        """Make the user column clickable and link to the edit page."""
-        url = reverse('admin:%s_%s_change' % (obj._meta.app_label, obj._meta.model_name), args=[obj.pk])
-        return format_html('<a href="{}">{}</a>', url, obj.last_name)
-    
-    def phone_link(self, obj):
-        """Make the user column clickable and link to the edit page."""
-        url = reverse('admin:%s_%s_change' % (obj._meta.app_label, obj._meta.model_name), args=[obj.pk])
-        return format_html('<a href="{}"><p>{}</p></a>', url, obj.phone)
- 
-    user_link.short_description = 'User'
-    first_name_link.short_description = 'First Name'
-    last_name_link.short_description = 'Last Name'
-    phone_link.short_description = 'Phone'
-
-admin.site.register(models.Profile, ProfileAdmin)

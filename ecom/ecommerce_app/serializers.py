@@ -15,4 +15,4 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        exclude = ['supplier']
+        fields = ('name', 'description', 'price', 'category', 'stock', 'product_images')

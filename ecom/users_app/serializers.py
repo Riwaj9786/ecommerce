@@ -6,7 +6,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AppUser
-        fields = ('id', 'email', 'created_at', 'updated_at')
+        fields = ('id', 'email')
+        read_only_fields = ('created_at', 'updated_at')
 
 
 class CreateuserSerializer(serializers.ModelSerializer):
@@ -14,7 +15,8 @@ class CreateuserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AppUser
-        fields = ('id', 'email', 'password', 'created_at', 'updated_at')
+        fields = ('id', 'email', 'password')
+        read_only_fields = ('created_at', 'updated_at')
         extra_kwargs = {
             'password': {'required': True}
         }
@@ -89,10 +91,15 @@ class PasswordResetSerializer(serializers.Serializer):
 
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
     class Meta:
         model = Profile
-        fields = ('user', 'profile_picture', 'first_name', 'last_name', 'email', 'phone', 'date_of_birth', 'address_line1', 'bio', 'academic_background', 'created_at', 'updated_at')
-        read_only_fields = ('user', 'email', 'created_at')
+        fields = (
+            'user', 'profile_picture', 'first_name', 'last_name', 'phone', 
+            'date_of_birth', 'address_line1', 'bio', 'academic_background',
+        )  
+        read_only_fields = ('user', 'email', 'created_at', 'updated_at')
 
 
 class ChangePasswordSerializer(serializers.Serializer):

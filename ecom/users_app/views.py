@@ -5,7 +5,6 @@ from django.urls import reverse
 from knox import views as knox_views
 from knox.models import AuthToken
 from rest_framework.views import APIView
-from rest_framework import permissions
 from rest_framework.response import Response
 from rest_framework.generics import CreateAPIView, UpdateAPIView, RetrieveAPIView
 from users_app.serializers import ProfileUpdateSerializer, ChangePasswordSerializer, EmailCheckSerializer, PasswordResetSerializer, UserSerializer, CreateuserSerializer, UpdateUserSerializer, LoginSerializer
@@ -22,7 +21,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 
 class LoginAPIView(knox_views.LoginView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = (AllowAny,)
     serializer_class = LoginSerializer
 
     def post(self, request, format=None):
@@ -46,7 +45,7 @@ class CreateUserView(CreateAPIView):
 class RetrieveProfileView(RetrieveAPIView):
     queryset = Profile.objects.all()
     serializer_class = ProfileUpdateSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     def retrieve(self, request, *args, **kwargs):
         try:
@@ -257,7 +256,7 @@ class ResetPasswordView(APIView):
         
 
 class ChangePasswordAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     def patch(self, request, *args, **kwargs):
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
