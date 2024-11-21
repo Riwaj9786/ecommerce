@@ -38,6 +38,7 @@ class AppUserManager(BaseUserManager):
         user.save(using=self.db)
         return user
     
+
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
@@ -56,7 +57,6 @@ class AppUserManager(BaseUserManager):
 class AppUser(BaseModel, AbstractBaseUser, PermissionsMixin):
     username = None
     email = models.EmailField(unique=True)
-    date_joined = models.DateField(auto_now_add=True, null=True)
     otp = models.IntegerField(null=True, blank=True, validators=[MinValueValidator(100000), MaxValueValidator(999999)])
     otp_expiry = models.DateTimeField(null=True, blank=True)
     is_staff = models.BooleanField(default=False)
