@@ -1,12 +1,12 @@
 from rest_framework import serializers
-from users_app.models import AppUser
+from users_app.models import AppUser, Profile
 from django.contrib.auth import authenticate
 
 class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AppUser
-        fields = ['id', 'email', 'first_name', 'last_name']
+        fields = ('id', 'email', 'created_at', 'updated_at')
 
 
 class CreateuserSerializer(serializers.ModelSerializer):
@@ -14,7 +14,7 @@ class CreateuserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AppUser
-        fields = ('id', 'email', 'first_name', 'last_name', 'password')
+        fields = ('id', 'email', 'password', 'created_at', 'updated_at')
         extra_kwargs = {
             'password': {'required': True}
         }
@@ -36,7 +36,7 @@ class UpdateUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AppUser
-        fields = ['id', 'email', 'first_name', 'last_name', 'password']
+        fields = ('id', 'email', 'password',)
 
     def update(self, instance, validated_data):
         password = validated_data.pop('password', None)
@@ -86,3 +86,28 @@ class PasswordResetSerializer(serializers.Serializer):
         if not AppUser.objects.filter(email=value).exists:
             raise serializers.ValidationError("No User is associated to this email!")
         return value
+
+
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ('user', 'profile_picture', 'first_name', 'last_name', 'email', 'phone', 'date_of_birth', 'address_line1', 'bio', 'academic_background', 'created_at', 'updated_at')
+        read_only_fields = ('user', 'email', 'created_at')
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(style={'input_type': 'password'}, trim_whitespace=False, write_only=True)
+    new_password = serializers.CharField(style={'input_type': 'password'}, trim_whitespace=False, write_only=True)
+    confirm_password = serializers.CharField(style={'input_type': 'password'}, trim_whitespace=False, write_only=True)
+
+    def validate_current_password(self, value):
+        user = self.context['request'].user
+
+        if not user.check_password(value):
+            raise serializers.ValidationError("Current Password is Incorrect!")
+        return value
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError("Passwords do not match.")
+        return data

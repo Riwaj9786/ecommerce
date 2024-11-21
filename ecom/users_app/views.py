@@ -7,9 +7,9 @@ from knox.models import AuthToken
 from rest_framework.views import APIView
 from rest_framework import permissions
 from rest_framework.response import Response
-from rest_framework.generics import CreateAPIView, UpdateAPIView
-from users_app.serializers import EmailCheckSerializer, PasswordResetSerializer, UserSerializer, CreateuserSerializer, UpdateUserSerializer, LoginSerializer
-from users_app.models import AppUser
+from rest_framework.generics import CreateAPIView, UpdateAPIView, RetrieveAPIView
+from users_app.serializers import ProfileUpdateSerializer, ChangePasswordSerializer, EmailCheckSerializer, PasswordResetSerializer, UserSerializer, CreateuserSerializer, UpdateUserSerializer, LoginSerializer
+from users_app.models import AppUser, Profile
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth import login
 from rest_framework import status
@@ -43,10 +43,80 @@ class CreateUserView(CreateAPIView):
     permission_classes = (AllowAny,)
 
 
-class UpdateUserView(UpdateAPIView):
-    queryset = AppUser.objects.all()
-    serializer_class = UpdateUserSerializer
+class RetrieveProfileView(RetrieveAPIView):
+    queryset = Profile.objects.all()
+    serializer_class = ProfileUpdateSerializer
+    permission_classes = [IsAuthenticated]
 
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            profile = request.user.profile
+        except Profile.DoesNotExist:
+            return Response(
+                {
+                    'message': 'Profile Not Found!'
+                },
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        serializer = ProfileUpdateSerializer(profile)
+        return Response(
+            {
+                'result': serializer.data
+            },
+            status=status.HTTP_200_OK
+        )
+
+
+# class UpdateUserView(UpdateAPIView):
+#     queryset = AppUser.objects.all()
+#     serializer_class = UpdateUserSerializer
+
+class UpdateProfileView(APIView):
+    queryset = Profile.objects.all()
+    serializer_class = ProfileUpdateSerializer
+
+    def put(self, request, *args, **kwargs):
+        try:
+            profile = request.user.profile
+        except Profile.DoesNotExist:
+            return Response(
+                {'message': 'Profile Not Found!'},
+                status = status.HTTP_404_NOT_FOUND
+            )
+        
+        serializer = ProfileUpdateSerializer(profile, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {
+                    'message': 'Profile Updated Successfully!',
+                    'result': serializer.data
+                },
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def patch(self, request, *args, **kwargs):
+        try:
+            profile = request.user.profile
+        except Profile.DoesNotExist:
+            return Response(
+                {'message': 'profile Not Found!'},
+                status = status.HTTP_404_NOT_FOUND
+            )
+        
+        serializer = ProfileUpdateSerializer(profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {'message': 'Profile Updated!'},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
 
 class CheckEmailView(APIView):
     permission_classes = (AllowAny,)
@@ -63,7 +133,6 @@ class CheckEmailView(APIView):
 class ResetPasswordRequestAPIView(APIView):
     permission_classes = (AllowAny,)
 
-    @csrf_exempt
     def post(self, request):
         email = request.data.get('email')
 
@@ -141,7 +210,6 @@ class ResetPasswordView(APIView):
     def post(self, request, uid, token):
         
         pk = urlsafe_base64_decode(uid).decode()
-        print(f"Decoded UID: {pk}")
         try:
             user = AppUser.objects.get(pk=pk)
 
@@ -173,15 +241,39 @@ class ResetPasswordView(APIView):
                     status= status.HTTP_200_OK
                 )
         
-        # except ObjectDoesNotExist:
-        #     # User with the given ID does not exist
-        #     return Response(
-        #         {'message': 'User does not exist'},
-        #         status=status.HTTP_404_NOT_FOUND
-        #     )
+        except ObjectDoesNotExist:
+            # User with the given ID does not exist
+            return Response(
+                {'message': 'User does not exist'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
         except Exception as e:
             # Catch any other unexpected errors
             return Response(
                 {'message': str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+        
+
+class ChangePasswordAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, *args, **kwargs):
+        serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
+
+        if serializer.is_valid(raise_exception=True):
+            user = request.user
+            new_password = serializer.validated_data['new_password']
+
+            user.set_password(new_password)
+            user.save()
+
+            return Response(
+                {'message': "Password Changed Successfully!"},
+                status = status.HTTP_200_OK
+            )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUESTs)
+
+
