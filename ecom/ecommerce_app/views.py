@@ -1,13 +1,12 @@
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework.generics import (
-    ListAPIView,
     ListCreateAPIView,
-    UpdateAPIView,
-    CreateAPIView
+    DestroyAPIView,
 )
 
 from django.shortcuts import get_object_or_404
+from users_app.models import AppUser
 from ecommerce_app.permissions import IsOwner, IsOwnerSafe
 from ecommerce_app.serializers import (
     CartItemSerializer,
@@ -26,34 +25,65 @@ from rest_framework import status
 from rest_framework.permissions import (
     IsAdminUser, IsAuthenticated, IsAuthenticatedOrReadOnly
 )
+from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
 
 # Create your views here.
-class ProductAPIView(APIView):
+class ProductAPIView(ListCreateAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
     permission_classes = (IsAuthenticatedOrReadOnly,)
+    filter_backends = (filters.SearchFilter, DjangoFilterBackend,)
+    search_fields = ('name',)
+    filterset_fields = ('category', 'supplier',)
 
-    def get(self, request, pk=None):
-        if pk:
-            product = get_object_or_404(Product, pk=pk)
-            serializer = ProductSerializer(product)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            product = Product.objects.all()
-            serializer = ProductSerializer(product, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-      
-        
-    def post(self, request):
+
+    def create(self, request, *args, **kwargs):
         serializer = ProductSerializer(data=request.data)
 
         if serializer.is_valid():
             serializer.save(supplier=request.user)
-            return Response({
-                'product': serializer.data,
-                'message': "Product Added Successfully"
-            }, 
-            status=status.HTTP_201_CREATED)
+            return Response(
+                {
+                    'product': serializer.data,
+                },
+                status=status.HTTP_201_CREATED
+            )
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProductDestroyAPIView(DestroyAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = (IsOwner,)
+
+# class ProductAPIView(APIView):
+#     permission_classes = (IsAuthenticatedOrReadOnly,)
+
+#     def get(self, request, pk=None):
+#         if pk:
+#             product = get_object_or_404(Product, pk=pk)
+#             serializer = ProductSerializer(product)
+#             return Response(serializer.data, status=status.HTTP_200_OK)
+#         else:
+#             product = Product.objects.all()
+#             serializer = ProductSerializer(product, many=True)
+#             return Response(serializer.data, status=status.HTTP_200_OK)
+      
+        
+#     def post(self, request):
+#         serializer = ProductSerializer(data=request.data)
+
+#         if serializer.is_valid():
+#             serializer.save(supplier=request.user)
+#             return Response({
+#                 'product': serializer.data,
+#                 'message': "Product Added Successfully"
+#             }, 
+#             status=status.HTTP_201_CREATED)
+#         else:
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProductImageAPIView(ListCreateAPIView):
@@ -116,10 +146,9 @@ class CartAPIView(APIView):
             )
 
 
-
-class UserProductsView(APIView):
+class CategoryAPIView(APIView):
     pass
 
 
-class CategoryAPIView(APIView):
+class AddToCartAPIView(APIView):
     pass

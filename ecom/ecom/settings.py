@@ -39,13 +39,14 @@ LOCAL_APPS = [
 
 THIRD_PARTY_APPS = [
     'rest_framework',
-    'knox'
+    'knox',
+    'jazzmin',
+    'django_filters',
 ]
 
 INSTALLED_APPS = [
     *LOCAL_APPS,
     *THIRD_PARTY_APPS,
-    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -93,6 +94,10 @@ REST_FRAMEWORK = {
     # 'DEFAULT_PARSER_CLASSES': [
     #     'rest_framework.parsers.JSONParser',
     # ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+    ]
 }
 
 CSRF_TRUSTED_ORIGINS = []
