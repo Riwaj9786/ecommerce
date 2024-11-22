@@ -34,24 +34,25 @@ ALLOWED_HOSTS = []
 # Application definition
 LOCAL_APPS = [
     'ecommerce_app',
-    'users_app'
+    'users_app',
 ]
 
 THIRD_PARTY_APPS = [
     'rest_framework',
-    'knox'
+    'knox',
+    'jazzmin',
+    'django_filters',
 ]
 
 INSTALLED_APPS = [
-    'jazzmin',
+    *LOCAL_APPS,
+    *THIRD_PARTY_APPS,
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    *LOCAL_APPS,
-    *THIRD_PARTY_APPS,
 ]
 
 MIDDLEWARE = [
@@ -93,6 +94,10 @@ REST_FRAMEWORK = {
     # 'DEFAULT_PARSER_CLASSES': [
     #     'rest_framework.parsers.JSONParser',
     # ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+    ]
 }
 
 CSRF_TRUSTED_ORIGINS = []
@@ -151,7 +156,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kathmandu'
 
 USE_I18N = True
 
@@ -162,8 +167,15 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+# STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'), 
+]
+
+# Make sure you have media settings defined
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -213,30 +225,30 @@ JAZZMIN_SETTINGS = {
     ############
 
     # Links to put along the top menu
-    "topmenu_links": [
+    # "topmenu_links": [
 
-        # Url that gets reversed (Permissions can be added)
-        {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
+    #     # Url that gets reversed (Permissions can be added)
+    #     {"name": "Home",  "url": "admin:index", "permissions": ["auth.view_user"]},
 
-        # external url that opens in a new window (Permissions can be added)
-        {"name": "Support", "url": "https://github.com/farridav/django-jazzmin/issues", "new_window": True},
+    #     # external url that opens in a new window (Permissions can be added)
+    #     {"name": "Support", "url": "https://github.com/farridav/django-jazzmin/issues", "new_window": True},
 
-        # model admin to link to (Permissions checked against model)
-        {"model": "auth.User"},
+    #     # model admin to link to (Permissions checked against model)
+    #     {"model": "auth.User"},
 
-        # App with dropdown menu to all its models pages (Permissions checked against models)
-        {"app": "books"},
-    ],
+    #     # App with dropdown menu to all its models pages (Permissions checked against models)
+    #     {"app": "books"},
+    # ],
 
     #############
     # User Menu #
     #############
 
     # Additional links to include in the user menu on the top right ("app" url type is not allowed)
-    "usermenu_links": [
-        {"name": "Support", "url": "https://github.com/farridav/django-jazzmin/issues", "new_window": True},
-        {"model": "auth.user"}
-    ],
+    # "usermenu_links": [
+    #     {"name": "Support", "url": "https://github.com/farridav/django-jazzmin/issues", "new_window": True},
+    #     {"model": "auth.user"}
+    # ],
 
     #############
     # Side Menu #

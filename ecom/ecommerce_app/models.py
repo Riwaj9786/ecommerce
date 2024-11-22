@@ -1,6 +1,8 @@
 import os
 import uuid
 from django.db import models
+from django.core.exceptions import ValidationError
+from users_app.models import AppUser
 
 # Create your models here.
 def product_image_upload_to(instance, filename):
@@ -72,3 +74,74 @@ class ProductImage(models.Model):
     def __str__(self):
         return f"{self.product.name}-{self.id}"
     
+
+class Cart(models.Model):
+    cart_id = models.CharField(
+        primary_key=True,
+        max_length=15,
+        editable=False
+    )
+
+    user = models.ForeignKey(AppUser, on_delete=models.CASCADE, related_name='cart')
+    total_amount = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    is_checked_out = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if not self.cart_id:
+            try:
+                last_card = Cart.objects.latest('cart_id')
+                last_card_id = last_card.cart_id
+                card_number = last_card_id.split('_')[-1]
+
+                new_id = int(card_number) + 1
+                self.cart_id = f"CART_{new_id:04d}"
+            
+            except Cart.DoesNotExist:
+                self.cart_id = "CART_0001"
+
+        self.total_amount = self.calculate_total_amount()
+
+        super().save(*args, **kwargs)
+
+    def calculate_total_amount(self):
+        total = sum(item.product.price * item.quantity for item in self.cart_item.all())
+        return total
+
+    def __str__(self):
+        return f"{self.cart_id}-{self.user}"
+    
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='cart_item')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='cart_product')
+    quantity = models.PositiveIntegerField(default=1)
+
+    def save(self, *args, **kwargs):
+        original_quantity = 0
+
+        if self.pk:
+            cart_item = CartItem.objects.get(pk=self.pk)
+            original_quantity = cart_item.quantity
+
+        quantity_difference = self.quantity-original_quantity
+
+        if self.product.stock < quantity_difference:
+            raise ValidationError("Your order quantity is more than the current stock!")
+        else:
+            self.product.stock -= quantity_difference
+
+        self.product.save()
+        super().save(*args, **kwargs)
+        self.cart.save()
+
+
+    def delete(self, *args, **kwargs):
+        self.product.stock+=self.quantity
+        self.product.save()
+
+        super().delete(*args, **kwargs)
+        self.cart.save()
+
+
+    def __str__(self):
+        return f"Cart Item - {self.product.name} in {self.cart.cart_id}"
